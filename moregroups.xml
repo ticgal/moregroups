@@ -1,0 +1,55 @@
+<root>
+   <name>More Groups</name>
+   <key>moregroups</key>
+   <state>stable</state>
+   <logo>https://raw.githubusercontent.com/ticgal/moregroups/multimedia/moregroups.png</logo>
+   <description>
+      <short>
+         <en>Fast group member manager: reactivate or manage group members without manual click-work</en>
+      </short>
+      <long>
+         <en>
+More Groups speeds up group member management in GLPI. On a Group's Group_User tab,
+deactivating a user moves them out of the group's active member list into a
+"Deactivated users" list on the same tab, without losing their membership settings
+(dynamic, manager, delegatee). Click the activate button on a deactivated user to
+bring them straight back into the group.
+
+Massive actions let you activate or deactivate several users at once, and
+deactivated members keep their original manager/delegatee/dynamic flags for when
+they're reactivated.
+         </en>
+      </long>
+   </description>
+   <homepage>https://tic.gal</homepage>
+   <download>https://github.com/ticgal/moregroups</download>
+   <issues>https://github.com/ticgal/moregroups/issues</issues>
+   <readme>https://github.com/ticgal/moregroups/blob/develop/README.md</readme>
+   <authors>
+      <author>TICGAL</author>
+   </authors>
+   <versions>
+      <version>
+         <num>2.0.1</num>
+         <compatibility>~11.0.0</compatibility>
+         <download_url>https://github.com/ticgal/moregroups/releases/download/2.0.1/glpi-moregroups-2.0.1.tar.bz2</download_url>
+      </version>
+   </versions>
+   <langs>
+      <lang>en_GB</lang>
+      <lang>es_ES</lang>
+      <lang>gl_ES</lang>
+   </langs>
+   <license>AGPL v3+</license>
+   <tags>
+      <en>
+         <tag>Users</tag>
+         <tag>Groups</tag>
+      </en>
+   </tags>
+   <screenshots>
+      <screenshot>https://raw.githubusercontent.com/ticgal/moregroups/multimedia/moregroups-1.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/ticgal/moregroups/multimedia/moregroups-2.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/ticgal/moregroups/multimedia/moregroups-3.png</screenshot>
+   </screenshots>
+</root>
