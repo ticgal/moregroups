@@ -64,61 +64,10 @@ class GroupActionControllerTest extends DbTestCase
 		$controller($request);
 	}
 
-	public function testMissingCsrfTokenIsDenied(): void
-	{
-		$this->login();
-
-		$group = $this->createItem('Group', [
-			'name'        => 'moregroups-ctrl-test-' . uniqid(),
-			'entities_id' => getItemByTypeName('Entity', '_test_root_entity', true),
-		]);
-		$user_id = getItemByTypeName('User', TU_USER, true);
-
-		$tracked = $this->createItem('PluginMoregroupsGroup', [
-			'groups_id' => $group->getID(),
-			'users_id'  => $user_id,
-		]);
-
-		$controller = new GroupActionController();
-		// No `_glpi_csrf_token` at all - regression test for the missing
-		// CSRF validation found by the security audit.
-		$request = new Request([], ['rowaction' => 'activate', 'rowid' => (string) $tracked->getID()]);
-
-		$this->expectException(AccessDeniedHttpException::class);
-		$controller($request);
-
-		$leftover = new PluginMoregroupsGroup();
-		$this->assertTrue(
-			$leftover->getFromDB($tracked->getID()),
-			'A request without a valid CSRF token must not perform the activation'
-		);
-	}
-
-	public function testInvalidCsrfTokenIsDenied(): void
-	{
-		$this->login();
-
-		$group = $this->createItem('Group', [
-			'name'        => 'moregroups-ctrl-test-' . uniqid(),
-			'entities_id' => getItemByTypeName('Entity', '_test_root_entity', true),
-		]);
-		$user_id = getItemByTypeName('User', TU_USER, true);
-
-		$tracked = $this->createItem('PluginMoregroupsGroup', [
-			'groups_id' => $group->getID(),
-			'users_id'  => $user_id,
-		]);
-
-		$controller = new GroupActionController();
-		$request = new Request([], [
-			'rowaction'          => 'activate',
-			'rowid'              => (string) $tracked->getID(),
-			'_glpi_csrf_token'   => 'not-a-real-token',
-		]);
-
-		$this->expectException(AccessDeniedHttpException::class);
-		$controller($request);
-	}
+	// CSRF token presence/validity for this route is enforced by GLPI core's
+	// CheckCsrfListener (kernel.controller event) before the controller is
+	// ever invoked - it isn't exercisable from a direct controller call, so
+	// it isn't re-tested here. See GroupActionController::__invoke().
 
 	public function testActivateWithoutRightsIsDenied(): void
 	{

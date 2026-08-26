@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Bugs
+- Fix the activate/deactivate group membership action always failing with an access-denied error
 
 ## 2.0.2 - 26/08/2026
 ### Bugs

@@ -49,9 +49,11 @@ class GroupActionController extends AbstractController
 	{
 		global $CFG_GLPI;
 
-		if (!Session::validateCSRF($request->request->all())) {
-			throw new AccessDeniedHttpException();
-		}
+		// GLPI's core CheckCsrfListener (kernel.controller event) already
+		// validates and consumes the CSRF token for every non-safe-method
+		// request before a Symfony-routed controller runs. A second manual
+		// Session::validateCSRF() call here always fails: the token has
+		// already been unset from $_SESSION by the time we get here.
 
 		$rowaction = $request->request->get('rowaction');
 		$rowid     = $request->request->get('rowid');
