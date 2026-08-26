@@ -3,6 +3,7 @@
 ## [Unreleased]
 ### Bugs
 - Fix the activate/deactivate group membership action always failing with an access-denied error
+- Fix the "Deactivate" button never appearing next to active group members, which made it impossible to deactivate a membership from the Users tab
 
 ## 2.0.2 - 26/08/2026
 ### Bugs

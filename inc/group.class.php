@@ -226,7 +226,7 @@ class PluginMoregroupsGroup extends CommonDBChild
 			$script = <<<JAVASCRIPT
 			
 				$(document).ready(function() {
-					$("input[name^='item[Group_User]'").each(function() {
+					$("input[name^='item[Group_User]']").each(function() {
 						var name = $(this).attr('name');
 						const myarray = name.split('[');
 						name = myarray[2].split(']')[0];
