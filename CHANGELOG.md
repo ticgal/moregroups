@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## 2.0.3 - 01/09/2026
+### Bugs
+- Fix safety warnings
+
 ## 2.0.2 - 26/08/2026
 ### Bugs
 - Fix a security issue that let a user with only read access to a group activate or deactivate other users' group memberships

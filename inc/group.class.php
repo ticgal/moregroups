@@ -109,6 +109,7 @@ class PluginMoregroupsGroup extends CommonDBChild
 					}
 				}
 				return true;
+
 			case 'activate':
 				foreach ($ids as $id) {
 					if (!$item->getFromDB($id)) {
@@ -122,6 +123,8 @@ class PluginMoregroupsGroup extends CommonDBChild
 						unset($input['id']);
 						$group_user = new Group_User();
 						if ($group_user->add($input)) {
+							// Purga el registro de la tabla del plugin tras reactivar exitosamente al usuario
+							$item->delete(['id' => $id], true);
 							$ma->itemDone($item->getType(), $id, MassiveAction::ACTION_OK);
 						} else {
 							$ma->itemDone($item->getType(), $id, MassiveAction::ACTION_KO);
@@ -138,24 +141,21 @@ class PluginMoregroupsGroup extends CommonDBChild
 	{
 		global $DB;
 
-		$query = [
-			'FROM' => self::getTable(),
-		];
-		if ($item->getType() == 'Group') {
-			$query['WHERE'] = [
-				'AND' => [
-					'groups_id' => $item->getID(),
-				],
-			];
+		if ($item->getType() != 'Group') {
+			return false;
 		}
 
 		$ID = $item->getID();
-		if (
-			!User::canView()
-			|| !$item->can($ID, READ)
-		) {
+		if (!User::canView() || !$item->can($ID, READ)) {
 			return false;
 		}
+
+		$query = [
+			'FROM'  => self::getTable(),
+			'WHERE' => [
+				'groups_id' => $ID,
+			],
+		];
 
 		$canedit = Group_User::canUpdate();
 		$rand    = mt_rand();
@@ -183,7 +183,7 @@ class PluginMoregroupsGroup extends CommonDBChild
 				'delegatee' => $row['is_userdelegate'] ? "<i class='ti ti-check'></i>" : '',
 			];
 			if ($canedit) {
-				$entry['actions'] = "<button type='button' onclick='getElementById(\"activateForm\").rowaction.value=\"activate\";getElementById(\"activateForm\").rowid.value=".$row['id'].";getElementById(\"activateForm\").submit();' class='btn btn-sm btn-primary' title='" . _sx('button', 'Activate user', 'moregroups') . "'><i class='ti ti-eye'></i></button>";
+				$entry['actions'] = "<button type='button' onclick='getElementById(\"activateForm\").rowaction.value=\"activate\";getElementById(\"activateForm\").rowid.value=" . $row['id'] . ";getElementById(\"activateForm\").submit();' class='btn btn-sm btn-primary' title='" . _sx('button', 'Activate user', 'moregroups') . "'><i class='ti ti-eye'></i></button>";
 			}
 			$entries[] = $entry;
 		}
@@ -222,19 +222,19 @@ class PluginMoregroupsGroup extends CommonDBChild
 		]);
 
 		if ($canedit) {
-			$label = _sx('button', 'Deactivate user', 'moregroups');
+			$label = htmlspecialchars(_sx('button', 'Deactivate user', 'moregroups'), ENT_QUOTES);
 			$script = <<<JAVASCRIPT
-			
-				$(document).ready(function() {
-					$("input[name^='item[Group_User]'").each(function() {
-						var name = $(this).attr('name');
-						const myarray = name.split('[');
-						name = myarray[2].split(']')[0];
-
-						$(this).parent().parent().append("<td class='center'><button type='button' onclick='getElementById(\"activateForm\").rowaction.value=\"deactivate\";getElementById(\"activateForm\").rowid.value="+name+";getElementById(\"activateForm\").submit();' class='btn btn-sm btn-primary' title='{$label}'><i class='ti ti-eye-off'></i></button></td>");
-					});
-				});
-			JAVASCRIPT;
+                $(document).ready(function() {
+                    $("input[name^='item[Group_User]']").each(function() {
+                        var name = $(this).attr('name');
+                        const myarray = name.split('[');
+                        if (myarray.length >= 3) {
+                            name = myarray[2].split(']')[0];
+                            $(this).parent().parent().append("<td class='center'><button type='button' onclick='getElementById(\"activateForm\").rowaction.value=\"deactivate\";getElementById(\"activateForm\").rowid.value="+name+";getElementById(\"activateForm\").submit();' class='btn btn-sm btn-primary' title='{$label}'><i class='ti ti-eye-off'></i></button></td>");
+                        }
+                    });
+                });
+            JAVASCRIPT;
 
 			echo Html::scriptBlock($script);
 		}
@@ -261,21 +261,27 @@ class PluginMoregroupsGroup extends CommonDBChild
 		if (!$DB->tableExists($table)) {
 			$migration->displayMessage("Installing $table");
 			$query = "CREATE TABLE IF NOT EXISTS $table (
-				`id` int {$default_key_sign} NOT NULL auto_increment,
-				`users_id` int unsigned NOT NULL DEFAULT '0',
-				`groups_id` int unsigned NOT NULL DEFAULT '0',
-				`is_dynamic` tinyint NOT NULL DEFAULT '0',
-				`is_manager` tinyint NOT NULL DEFAULT '0',
-				`is_userdelegate` tinyint NOT NULL DEFAULT '0',
-				PRIMARY KEY (`id`),
-				UNIQUE KEY `unicity` (`users_id`,`groups_id`),
-				KEY `groups_id` (`groups_id`),
-				KEY `is_dynamic` (`is_dynamic`),
-				KEY `is_manager` (`is_manager`),
-				KEY `is_userdelegate` (`is_userdelegate`)
-			) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
+                `id` int {$default_key_sign} NOT NULL auto_increment,
+                `users_id` int unsigned NOT NULL DEFAULT '0',
+                `groups_id` int unsigned NOT NULL DEFAULT '0',
+                `is_dynamic` tinyint NOT NULL DEFAULT '0',
+                `is_manager` tinyint NOT NULL DEFAULT '0',
+                `is_userdelegate` tinyint NOT NULL DEFAULT '0',
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `unicity` (`users_id`,`groups_id`),
+                KEY `groups_id` (`groups_id`),
+                KEY `is_dynamic` (`is_dynamic`),
+                KEY `is_manager` (`is_manager`),
+                KEY `is_userdelegate` (`is_userdelegate`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
+
 			if (!$DB->doQuery($query)) {
-				$migration->displayWarning("Error creating table $table: " . $DB->error(), true);
+				\Session::addMessageAfterRedirect(
+					sprintf(__('Error creating table %s: %s', 'moregroups'), 'glpi_plugin_moregroups_groups', $DB->error()),
+					false,
+					ERROR
+				);
+				return false;
 			}
 		}
 	}
