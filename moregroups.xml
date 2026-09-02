@@ -28,7 +28,12 @@ they're reactivated.
    <authors>
       <author>TICGAL</author>
    </authors>
-   <versions>
+<versions>
+      <version>
+         <num>2.0.3</num>
+         <compatibility>~11.0.0</compatibility>
+         <download_url>https://github.com/ticgal/moregroups/releases/download/2.0.3/glpi-moregroups-2.0.3.tar.bz2</download_url>
+      </version>
       <version>
          <num>2.0.1</num>
          <compatibility>~11.0.0</compatibility>
