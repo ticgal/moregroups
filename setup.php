@@ -1,4 +1,5 @@
 <?php
+
 /*
  -------------------------------------------------------------------------
  More Groups plugin for GLPI
@@ -22,7 +23,7 @@
  @author    the TICGAL team
  @copyright Copyright (c) 2022-2026 TICGAL team
  @license   AGPL License 3.0 or (at your option) any later version
-				http://www.gnu.org/licenses/agpl-3.0-standalone.html
+                http://www.gnu.org/licenses/agpl-3.0-standalone.html
  @link      https://www.tic.gal
  @since     2022
  ----------------------------------------------------------------------
@@ -30,41 +31,40 @@
 
 use Glpi\Plugin\Hooks;
 
-define('PLUGIN_MOREGROUPS_VERSION', '2.0.3');
-define('PLUGIN_MOREGROUPS_MIN_GLPI', '11.0.0');
-define('PLUGIN_MOREGROUPS_MAX_GLPI', '11.0.99');
+define('PLUGIN_MOREGROUPS_VERSION', '3.0.0-beta.1');
+define('PLUGIN_MOREGROUPS_MIN_GLPI', '12.0.0');
+define('PLUGIN_MOREGROUPS_MAX_GLPI', '12.1.0');
 
 function plugin_version_moregroups()
 {
-	return [
-		'name' => 'More Groups',
-		'version' => PLUGIN_MOREGROUPS_VERSION,
-		'author' => '<a href="https://tic.gal">TICGAL</a>',
-		'homepage' => 'https://tic.gal',
-		'license' => 'AGPLv3+',
-		'requirements' => [
-			'glpi' => [
-				'min' => PLUGIN_MOREGROUPS_MIN_GLPI,
-				'max' => PLUGIN_MOREGROUPS_MAX_GLPI,
-			]
-		]
-	];
+    return [
+        'name' => 'More Groups',
+        'version' => PLUGIN_MOREGROUPS_VERSION,
+        'author' => '<a href="https://tic.gal">TICGAL</a>',
+        'homepage' => 'https://tic.gal',
+        'license' => 'AGPLv3+',
+        'requirements' => [
+            'glpi' => [
+                'min' => PLUGIN_MOREGROUPS_MIN_GLPI,
+                'max' => PLUGIN_MOREGROUPS_MAX_GLPI,
+            ],
+        ],
+    ];
 }
 
 function plugin_init_moregroups()
 {
-	global $PLUGIN_HOOKS;
+    /** @var array<string, mixed> $PLUGIN_HOOKS */
+    global $PLUGIN_HOOKS;
 
-	$PLUGIN_HOOKS['csrf_compliant']['moregroups'] = true;
+    $plugin = new Plugin();
+    if ($plugin->isActivated('moregroups')) {
+        $PLUGIN_HOOKS['use_massive_action']['moregroups'] = 1;
 
-	$plugin = new Plugin();
-	if ($plugin->isActivated('moregroups')) {
-		$PLUGIN_HOOKS['use_massive_action']['moregroups'] = 1;
+        $PLUGIN_HOOKS[Hooks::POST_SHOW_TAB]['moregroups'] = 'plugin_moregroups_post_show_tab';
 
-		$PLUGIN_HOOKS[Hooks::POST_SHOW_TAB]['moregroups'] = 'plugin_moregroups_post_show_tab';
-
-		$PLUGIN_HOOKS['item_add']['moregroups'] = [
-			'Group_User' => 'plugin_moregroups_group_user_add',
-		];
-	}
+        $PLUGIN_HOOKS['item_add']['moregroups'] = [
+            'Group_User' => 'plugin_moregroups_group_user_add',
+        ];
+    }
 }

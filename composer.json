@@ -2,14 +2,19 @@
 	"name": "ticgal/moregroups",
 	"description": "More Groups plugin for GLPI",
 	"license": "AGPL-3.0-or-later",
-	"require": {
-	},
+	"require": {},
 	"require-dev": {
+		"friendsofphp/php-cs-fixer": "^3.75",
+		"friendsoftwig/twigcs": "^6.1",
 		"glpi-project/tools": "^0.7.5",
-		"phpunit/phpunit": "^11",
+		"php-parallel-lint/php-parallel-lint": "^1.4",
+		"phpstan/extension-installer": "^1.4",
+		"phpstan/phpstan": "^2.1",
+		"phpstan/phpstan-deprecation-rules": "^2.0",
 		"squizlabs/php_codesniffer": "^3.7"
 	},
 	"config": {
+		"autoloader-suffix": "Moregroups",
 		"optimize-autoloader": true,
 		"platform": {
 			"php": "8.2.0"
@@ -21,7 +26,8 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"GlpiPlugin\\Moregroups\\": "src/"
+			"GlpiPlugin\\Moregroups\\": "src/",
+			"CustomPHPStanRules\\": "tools/phpstan/rules/"
 		}
 	},
 	"autoload-dev": {

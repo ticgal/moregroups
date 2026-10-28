@@ -1,4 +1,5 @@
 <?php
+
 /*
  -------------------------------------------------------------------------
  More Groups plugin for GLPI
@@ -22,7 +23,7 @@
  @author    the TICGAL team
  @copyright Copyright (c) 2022-2026 TICGAL team
  @license   AGPL License 3.0 or (at your option) any later version
-				http://www.gnu.org/licenses/agpl-3.0-standalone.html
+                http://www.gnu.org/licenses/agpl-3.0-standalone.html
  @link      https://www.tic.gal
  @since     2022
  ----------------------------------------------------------------------
@@ -33,9 +34,9 @@ namespace GlpiPlugin\Moregroups\Controller;
 use Glpi\Controller\AbstractController;
 use Glpi\Exception\Http\AccessDeniedHttpException;
 use Glpi\Exception\Http\BadRequestHttpException;
+use GlpiPlugin\Moregroups\Group as DeactivatedGroup;
 use Group;
 use Group_User;
-use PluginMoregroupsGroup;
 use Session;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -44,100 +45,102 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class GroupActionController extends AbstractController
 {
-	#[Route('/GroupAction', name: 'moregroups_group_action', methods: ['POST'])]
-	public function __invoke(Request $request): Response
-	{
-		global $CFG_GLPI;
+    // No `methods:` restriction on the route on purpose: GLPI's PluginsRouterListener lets the
+    // router's MethodNotAllowedException escape (HTTP 500 + CRITICAL in the log), so the method
+    // is checked here and answered with a proper 405.
+    #[Route('/GroupAction', name: 'moregroups_group_action')]
+    public function __invoke(Request $request): Response
+    {
+        /** @var array<string, mixed> $CFG_GLPI */
+        global $CFG_GLPI;
 
-		$rowaction = $request->request->get('rowaction');
-		$rowid     = $request->request->get('rowid');
+        if (!$request->isMethod('POST')) {
+            return new Response('', Response::HTTP_METHOD_NOT_ALLOWED, ['Allow' => 'POST']);
+        }
 
-		if (empty($rowaction) || empty($rowid)) {
-			throw new BadRequestHttpException();
-		}
+        $rowaction = $request->request->get('rowaction');
+        $rowid     = $request->request->get('rowid');
 
-		if (!Group_User::canUpdate()) {
-			throw new AccessDeniedHttpException();
-		}
+        if (empty($rowaction) || empty($rowid)) {
+            throw new BadRequestHttpException();
+        }
 
-		if ($rowaction === 'activate') {
-			$this->activate((int) $rowid);
-		} elseif ($rowaction === 'deactivate') {
-			$this->deactivate((int) $rowid);
-		}
+        if (!Group_User::canUpdate()) {
+            throw new AccessDeniedHttpException();
+        }
 
-		// Html::getBackUrl() sanitizes the Referer header (rejects `javascript:`, etc.)
-		// but does not restrict it to this GLPI instance — an absolute external URL
-		// passes its check unchanged, and \Glpi\Toolbox\URL::isGLPIRelativeUrl() rejects
-		// *every* browser-sent Referer because browsers always send an absolute URL, not
-		// a relative one. Compare the host explicitly instead: allow same-origin targets,
-		// fall back to a known-safe internal page for anything else.
-		//
-		// A target is only trusted as "already relative" when it starts with a single
-		// `/` followed by neither `/` nor `\` — WHATWG URL parsing treats a leading
-		// `/\` or `//` the same as `//host/...` for http(s), so `parse_url()` reporting
-		// a null host is not enough on its own to call it same-origin.
-		$back_url  = \Html::getBackUrl();
-		$back_host = parse_url($back_url, PHP_URL_HOST);
-		$base_host = parse_url($CFG_GLPI['url_base'], PHP_URL_HOST);
-		$is_relative = $back_host === null && preg_match('#^/[^/\\\\]#', $back_url) === 1;
-		if (!$is_relative && $back_host !== $base_host) {
-			$back_url = $CFG_GLPI['root_doc'] . '/front/central.php';
-		}
+        if ($rowaction === 'activate') {
+            $this->activate((int) $rowid);
+        } elseif ($rowaction === 'deactivate') {
+            $this->deactivate((int) $rowid);
+        }
 
-		return new RedirectResponse($back_url);
-	}
+        // Html::getBackUrl() sanitizes the Referer header (rejects `javascript:`, etc.)
+        // but does not restrict it to this GLPI instance — an absolute external URL
+        // passes its check unchanged, and \Glpi\Toolbox\URL::isGLPIRelativeUrl() rejects
+        // *every* browser-sent Referer because browsers always send an absolute URL, not
+        // a relative one. Compare the host explicitly instead: allow same-origin targets,
+        // fall back to a known-safe internal page for anything else.
+        //
+        // A target is only trusted as "already relative" when it starts with a single
+        // `/` followed by neither `/` nor `\` — WHATWG URL parsing treats a leading
+        // `/\` or `//` the same as `//host/...` for http(s), so `parse_url()` reporting
+        // a null host is not enough on its own to call it same-origin.
+        $back_url  = \Html::getBackUrl();
+        $back_host = parse_url($back_url, PHP_URL_HOST);
+        $base_host = parse_url($CFG_GLPI['url_base'], PHP_URL_HOST);
+        $is_relative = $back_host === null && preg_match('#^/[^/\\\\]#', $back_url) === 1;
+        if (!$is_relative && $back_host !== $base_host) {
+            $back_url = $CFG_GLPI['root_doc'] . '/front/central.php';
+        }
 
-	private function canAccessGroup(array $fields): bool
-	{
-		$group = new Group();
-		return $group->can($fields['groups_id'] ?? 0, UPDATE);
-	}
+        return new RedirectResponse($back_url);
+    }
 
-	private function activate(int $rowid): void
-	{
-		$item = new PluginMoregroupsGroup();
-		if (!$item->getFromDB($rowid)) {
-			Session::addMessageAfterRedirect($item->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
-			return;
-		}
-		if (!$this->canAccessGroup($item->fields)) {
-			throw new AccessDeniedHttpException();
-		}
+    private function activate(int $rowid): void
+    {
+        $item = new DeactivatedGroup();
+        if (!$item->getFromDB($rowid)) {
+            Session::addMessageAfterRedirect($item->getErrorMessage(ERROR_NOT_FOUND, $item::getTypeName(1)), false, ERROR);
+            return;
+        }
+        if (!DeactivatedGroup::canActivateMembership($item)) {
+            throw new AccessDeniedHttpException();
+        }
 
-		$input = $item->fields;
-		unset($input['id']);
-		$group_user = new Group_User();
-		if (!$group_user->add($input)) {
-			// plugin_moregroups_group_user_add (hook.php) deletes the matching
-			// PluginMoregroupsGroup row as soon as the Group_User is added; an
-			// explicit delete here would race it and fail against an
-			// already-removed row.
-			Session::addMessageAfterRedirect($group_user->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
-		}
-	}
+        $input = $item->fields;
+        unset($input['id']);
+        $group_user = new Group_User();
+        if (!$group_user->add($input)) {
+            // plugin_moregroups_group_user_add (hook.php) deletes the matching
+            // DeactivatedGroup row as soon as the Group_User is added; an
+            // explicit delete here would race it and fail against an
+            // already-removed row.
+            Session::addMessageAfterRedirect($group_user->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
+        }
+    }
 
-	private function deactivate(int $rowid): void
-	{
-		$item = new Group_User();
-		if (!$item->getFromDB($rowid)) {
-			Session::addMessageAfterRedirect($item->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
-			return;
-		}
-		if (!$this->canAccessGroup($item->fields)) {
-			throw new AccessDeniedHttpException();
-		}
+    private function deactivate(int $rowid): void
+    {
+        $item = new Group_User();
+        if (!$item->getFromDB($rowid)) {
+            Session::addMessageAfterRedirect($item->getErrorMessage(ERROR_NOT_FOUND, $item::getTypeName(1)), false, ERROR);
+            return;
+        }
+        if (!DeactivatedGroup::canDeactivateMembership($item)) {
+            throw new AccessDeniedHttpException();
+        }
 
-		$input = $item->fields;
-		unset($input['id']);
-		$group = new PluginMoregroupsGroup();
-		if ($group->add($input)) {
-			$group_user = new Group_User();
-			if (!$group_user->delete(['id' => $rowid])) {
-				Session::addMessageAfterRedirect($group_user->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
-			}
-		} else {
-			Session::addMessageAfterRedirect($group->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
-		}
-	}
+        $input = $item->fields;
+        unset($input['id']);
+        $group = new DeactivatedGroup();
+        if ($group->add($input)) {
+            $group_user = new Group_User();
+            if (!$group_user->delete(['id' => $rowid])) {
+                Session::addMessageAfterRedirect($group_user->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
+            }
+        } else {
+            Session::addMessageAfterRedirect($group->getErrorMessage(ERROR_NOT_FOUND), false, ERROR);
+        }
+    }
 }

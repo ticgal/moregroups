@@ -161,8 +161,6 @@ FILES_TO_DELETE=(
     # Internal-only docs (see docs-and-packaging conventions)
     "CHANGELOG-dev.md"
     "CHANGELOG-DEV.md"
-    "TESTING-dev.md"
-    "TESTING.md"
     "ARCHITECTURE.md"
     "docs"
     )

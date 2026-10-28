@@ -1,6 +1,12 @@
 # Changelog
+<!-- changelog-format: 2 -->
 
-## [Unreleased]
+## [3.0.0]
+### Features
+- Update to version 12
+### Bugs
+- Fix the activate/deactivate buttons being shown to users who have no permission to edit the group
+- Fix the Actions button of the deactivated users list saying that no items are selected
 
 ## 2.0.3 - 01/09/2026
 ### Bugs
