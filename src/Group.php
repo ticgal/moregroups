@@ -92,22 +92,20 @@ class Group extends CommonDBChild
     }
 
     /**
-     * Single authorization rule for moving a membership out of glpi_groups_users:
-     * update right on the parent group (entity and re-authentication included) and
-     * purge right on the membership itself.
+     * Single authorization rule for moving a membership out of glpi_groups_users. It is the
+     * rule core applies to the Group > Users tab (add and remove members): anyone who may
+     * manage group memberships may also deactivate one. Update right on the group itself is
+     * not required, the same as for core. Entity access is part of the membership's own check.
      */
     public static function canDeactivateMembership(Group_User $group_user): bool
     {
-        $groups_id = (int) ($group_user->fields['groups_id'] ?? 0);
-
-        return (new \Group())->can($groups_id, UPDATE)
+        return Group_User::canUpdate()
             && $group_user->can((int) $group_user->getID(), PURGE);
     }
 
     /**
-     * Single authorization rule for putting a deactivated user back in the group:
-     * update right on the parent group (entity and re-authentication included) and
-     * the right to create that membership.
+     * Single authorization rule for putting a deactivated user back in the group: the
+     * right core requires to add that member (same rule as the Group > Users tab).
      */
     public static function canActivateMembership(self $item): bool
     {
@@ -115,7 +113,6 @@ class Group extends CommonDBChild
         unset($input['id']);
 
         return Group_User::canUpdate()
-            && (new \Group())->can((int) ($input['groups_id'] ?? 0), UPDATE)
             && (new Group_User())->can(-1, CREATE, $input);
     }
 
@@ -214,8 +211,8 @@ class Group extends CommonDBChild
             ],
         ];
 
-        // Same rule as GroupActionController: membership update right AND update right on the group itself
-        $canedit = Group_User::canUpdate() && \Group::canUpdate() && $item->canUpdateItem();
+        // Same rule as core's Group > Users tab and as GroupActionController: whoever can manage memberships
+        $canedit = Group_User::canUpdate();
         $rand    = mt_rand();
 
         echo "<div class='card mx-n2 mb-n2 mt-4 border-0 shadow-none'>";

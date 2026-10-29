@@ -5,7 +5,7 @@
 ### Features
 - Update to version 12
 ### Bugs
-- Fix the activate/deactivate buttons being shown to users who have no permission to edit the group
+- Fix the activate/deactivate buttons not following the permission to manage group members, so every user who can add members now gets them
 - Fix the Actions button of the deactivated users list saying that no items are selected
 
 ## 2.0.3 - 01/09/2026
